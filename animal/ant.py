@@ -1,16 +1,16 @@
-class Animal:
-    def __init__(self, x, y, v_xm, v_ym, power, name):
-        self.x = x
-        self.y = y
-        self.v_xm = v_xm
-        self.v_ym = v_ym
-        self.power = power
-        self.name = name
+try:
+    from .animal import Animal
+except ImportError:
+    from animal import Animal
 
 
 class Ant(Animal):
     def __init__(self, x, y, v_xm, v_ym, name, is_youth=False, is_starving=False):
-        super().__init__(x, y, v_xm, v_ym, 1, name)
+        super().__init__(name=name, power=1, vmax=max(abs(v_xm), abs(v_ym)), x=x, y=y)
+        self.v_xm = v_xm
+        self.v_ym = v_ym
+        self.vx = v_xm
+        self.vy = v_ym
         self.is_youth = is_youth
         self.is_starving = is_starving
         self.is_herd = False
@@ -54,7 +54,18 @@ class Ant_herd(Animal):
     def __init__(self, x, y, v_xm, v_ym, power, name, ant_list):
         self.ant_list = ant_list
         self.ant_count = len(ant_list)
-        super().__init__(x, y, v_xm, v_ym, self.get_herd_power(), name)
+        herd_power = self.get_herd_power()
+        super().__init__(
+            name=name,
+            power=herd_power,
+            vmax=max(abs(v_xm), abs(v_ym)),
+            x=x,
+            y=y,
+        )
+        self.v_xm = v_xm
+        self.v_ym = v_ym
+        self.vx = v_xm
+        self.vy = v_ym
         self.is_herd = True
 
     def get_herd_power(self):
@@ -87,8 +98,7 @@ class Ant_herd(Animal):
         return nearby_ants
 
     def move(self, environment, radius):
-        self.x += self.v_xm
-        self.y += self.v_ym
+        self.place = (self.x + self.v_xm, self.y + self.v_ym)
         return self.absorb_nearby_ants(environment, radius)
 
 
