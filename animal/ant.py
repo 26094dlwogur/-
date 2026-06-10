@@ -97,7 +97,7 @@ class Ant_herd(Animal):
 
         return nearby_ants
 
-    def move(self, environment, radius):
+    def move(self, environment, radius=60):
         self.place = (self.x + self.v_xm, self.y + self.v_ym)
         return self.absorb_nearby_ants(environment, radius)
 

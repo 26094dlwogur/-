@@ -23,7 +23,8 @@ class WatergunFish(Animal):
         self.habitat = "water"
         self.home_x = x
         self.home_y = y
-        self._max_hunger = 30
+        self._max_hunger = 3600
+        self._shoot_cooldown = random.randint(300, 900)
         self.event_log = []
 
     def move(self, environment):
@@ -52,12 +53,20 @@ class WatergunFish(Animal):
         return hit
 
     def _try_shoot(self, environment):
+        if self._shoot_cooldown > 0:
+            self._shoot_cooldown -= 1
+            return
         for animal in list(environment.organism_list):
-            if isinstance(animal, (Ant, Ant_herd)) and animal.alive:
+            if (
+                isinstance(animal, (Ant, Ant_herd))
+                and animal.alive
+                and not getattr(animal, "is_falling", False)
+            ):
                 if abs(animal.x - self.x) <= 190 and animal.y < self.y:
+                    self._shoot_cooldown = random.randint(900, 1800)
                     if self.shoot(animal):
-                        animal.death("shot by watergun fish")
-                        self._eat()
+                        animal.is_falling = True
+                        animal.fall_vy = 0.0
                     return
 
     def reproduce(self):
