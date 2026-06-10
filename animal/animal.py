@@ -1,20 +1,40 @@
+import inspect
 import math
+
 
 class Animal:
     TICKS_PER_SECOND = 60
 
-    def __init__(self, name, power, vmax, x=0.0, y=0.0):
+    def __init__(
+        self,
+        name,
+        power,
+        vmax=0,
+        x=0.0,
+        y=0.0,
+        is_youth=True,
+        is_starving=False,
+    ):
         self.name = name
         self.power = power
-        self.vmax = vmax  # 팀원들이 아무리 속도를 높여도 이 값을 넘을 수 없음
-        
+        self.vmax = vmax
         self.place = (x, y)
         self.vx = 0.0
         self.vy = 0.0
-        
-        # 초기 조건은 고정으로 받음 (이후 업데이트는 내 알빠 아님!)
-        self.is_youth = True
-        self.is_starving = False
+        self.is_youth = is_youth
+        self.is_starving = is_starving
+        self.age = 0
+        self.is_alive = True
+        self._max_hunger = 100
+        self._hunger = 0
+
+    @property
+    def alive(self):
+        return self.is_alive
+
+    @alive.setter
+    def alive(self, value):
+        self.is_alive = value
 
     @property
     def x(self):
@@ -24,51 +44,75 @@ class Animal:
     def y(self):
         return self.place[1]
 
+    @property
+    def px(self):
+        return self.x
+
+    @px.setter
+    def px(self, value):
+        self.place = (value, self.y)
+
+    @property
+    def py(self):
+        return self.y
+
+    @py.setter
+    def py(self, value):
+        self.place = (self.x, value)
+
+    def get_distance(self, partner):
+        return math.hypot(self.x - partner.x, self.y - partner.y)
+
     def update_status(self):
-        '오버라이딩(조원 담당)'
         pass
 
     def calculate_velocity(self):
-        '오버라이딩(조원 담당)' 
         pass
 
     def move(self):
-        
-    
         current_speed = math.hypot(self.vx, self.vy)
-        
         if current_speed > self.vmax:
             ratio = self.vmax / current_speed
             self.vx *= ratio
             self.vy *= ratio
 
-        dx_per_tick = self.vx / self.TICKS_PER_SECOND
-        dy_per_tick = self.vy / self.TICKS_PER_SECOND
-        
-        new_x = self.x + dx_per_tick
-        new_y = self.y + dy_per_tick
-        self.place = (new_x, new_y)
+        self.place = (
+            self.x + self.vx / self.TICKS_PER_SECOND,
+            self.y + self.vy / self.TICKS_PER_SECOND,
+        )
 
-    def update_tick(self):
-        self.update_status()      
-        self.calculate_velocity() 
-        self.move()               
+    def update_tick(self, environment=None):
+        self.update_status()
+        self.calculate_velocity()
 
-def get_distance(self, partner):
-        # 내 좌표(self.x, self.y)와 상대방 좌표(partner.x, partner.y)의 거리 계산
-        return math.hypot(self.x - partner.x, self.y - partner.y)
+        parameters = inspect.signature(self.move).parameters
+        parameter_names = list(parameters)
+        if (
+            environment is not None
+            and parameter_names
+            and parameter_names[0] in ("environment", "env")
+        ):
+            self.move(environment)
+        elif not parameter_names:
+            self.move()
 
-def check_reproduce_condition(self, partner):
-        '이것도 오버라이딩'
-        pass
+    def _tick_hunger(self):
+        self._hunger += 1
+        if self._hunger >= self._max_hunger:
+            self.is_starving = True
 
-def reproduce(self, partner):
-        # 조원이 만든 조건 검사 로직을 호출해서 True가 나오면 번식 성공
-    if self.check_reproduce_condition(partner):
-        print(f"[{self.name}]와(과) [{partner.name}]이(가) 짝짓기에 성공하여 새로운 생명이 태어납니다!")
-        return True
-            
-    else:
-        return False
-def death(self):
-    print(f"[{self.name}] 제압되었습니다.")
+    def _eat(self):
+        self._hunger = 0
+        self.is_starving = False
+
+    def check_reproduce_condition(self, partner=None):
+        return self.is_alive and not self.is_starving
+
+    def reproduce(self, partner=None):
+        return None
+
+    def death(self, reason=None):
+        self.is_alive = False
+        if reason:
+            print(f"[{self.name}] died: {reason}")
+        return None
